@@ -1,6 +1,7 @@
 #ifndef __DOUBLYLINKEDLIST__
 #define __DOUBLYLINKEDLIST__
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

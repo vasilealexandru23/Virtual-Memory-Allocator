@@ -2,20 +2,20 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include "DoublyLinkedList.h"
-
-/* TODO : add your implementation for doubly-linked list */
+#include "utils.h"
+// #include "utilis.h"
 
 typedef struct {
 	uint64_t start_address;
 	size_t size;
-	void *miniblock_list;
+	list_t *miniblock_list; // capul listei de miniblockuri
 } block_t;
 
 typedef struct {
 	uint64_t start_address;
 	size_t size;
-	uint8_t perm;
-	void *rw_buffer;
+	uint8_t perm; // 6
+	void *rw_buffer; // aloc is stochez doar la write
 } miniblock_t;
 
 typedef struct {

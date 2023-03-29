@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "DoublyLinkedList.h"
 
 list_t *dll_create(unsigned int data_size) {
@@ -83,6 +82,11 @@ node_t* dll_remove_nth_node(list_t* list, unsigned int n) {
 
 void dll_free(list_t** pp_list) {
 	node_t *curr = (*pp_list)->head;
+	if (curr == NULL) {
+		free((*pp_list));
+		*pp_list = NULL;
+		return;
+	}
 	while (curr->next != NULL) {
 		curr = curr->next;
 		free(curr->prev->data);
@@ -91,4 +95,5 @@ void dll_free(list_t** pp_list) {
     free(curr->data);
     free(curr);
 	free((*pp_list));
+	*pp_list = NULL;
 }
