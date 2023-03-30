@@ -3,12 +3,11 @@
 #include <stddef.h>
 #include "DoublyLinkedList.h"
 #include "utils.h"
-// #include "utilis.h"
 
 typedef struct {
 	uint64_t start_address;
 	size_t size;
-	list_t *miniblock_list; // capul listei de miniblockuri
+	doubly_linked_list_t *miniblock_list; // capul listei de miniblockuri
 } block_t;
 
 typedef struct {
@@ -20,7 +19,7 @@ typedef struct {
 
 typedef struct {
 	uint64_t arena_size;
-	list_t *alloc_list;
+	doubly_linked_list_t *alloc_list;
 } arena_t;
 
 arena_t *alloc_arena(const uint64_t size);

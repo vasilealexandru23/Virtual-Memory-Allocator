@@ -19,7 +19,7 @@ int main(void) {
 			break;
 		} else if (!strcmp(command, "ALLOC_BLOCK")) {
 			uint64_t address, size;
-			scanf("%llu %llu ", &address, &size);
+			scanf("%llu%llu", &address, &size);
 			alloc_block(arena, address, size);
 		} else if (!strcmp(command, "FREE_BLOCK")) {
 			uint64_t address;
