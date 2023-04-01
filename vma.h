@@ -22,6 +22,9 @@ typedef struct {
 	doubly_linked_list_t *alloc_list;
 } arena_t;
 
+block_t create_block_t(const uint64_t address, const uint64_t size);
+miniblock_t create_miniblock_t(const uint64_t address, const uint64_t size);
+
 arena_t *alloc_arena(const uint64_t size);
 void dealloc_arena(arena_t *arena);
 
