@@ -4,8 +4,8 @@
 #define MAX_COMMAND_SIZE 64
 #define DATA_LEN 100
 
-int main(void) {
-
+int main(void)
+{
 	char *command = (char *)malloc(MAX_COMMAND_SIZE * sizeof(char));
 	arena_t *arena = NULL;
 	while (1) {
@@ -65,7 +65,6 @@ int main(void) {
 		} else {
 			printf("Invalid command. Please try again.\n");
 		}
-
 	}
 	free(command);
 	return 0;

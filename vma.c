@@ -1,6 +1,7 @@
 #include "vma.h"
 
-block_t create_block_t(const uint64_t address, const uint64_t size) {
+block_t create_block_t(const uint64_t address, const uint64_t size)
+{
 	block_t new_block;
 	new_block.start_address = address;
 	new_block.size = size;
@@ -9,7 +10,8 @@ block_t create_block_t(const uint64_t address, const uint64_t size) {
 	return new_block;
 }
 
-miniblock_t create_miniblock_t(const uint64_t address, const uint64_t size) {
+miniblock_t create_miniblock_t(const uint64_t address, const uint64_t size)
+{
 	miniblock_t new_miniblock;
 	new_miniblock.start_address = address;
 	new_miniblock.size = size;
@@ -21,7 +23,7 @@ miniblock_t create_miniblock_t(const uint64_t address, const uint64_t size) {
 arena_t *alloc_arena(const uint64_t size)
 {
 	arena_t *arena = (arena_t *)malloc(sizeof(arena_t));
-    arena->arena_size = size;
+    	arena->arena_size = size;
 	arena->alloc_list = dll_create(sizeof(block_t));
 	return arena;
 }
@@ -29,7 +31,7 @@ arena_t *alloc_arena(const uint64_t size)
 void dealloc_arena(arena_t *arena)
 {
 	dll_node_t *current_block = arena->alloc_list->head;
-	if (current_block == NULL) {
+	if (!current_block) {
 		dll_free(&arena->alloc_list);
 		free(arena);
 		arena = NULL;
@@ -37,11 +39,11 @@ void dealloc_arena(arena_t *arena)
 	}
 	// parcurg fiecare block, sterg informatiile din miniblockuri,
 	// dau free la block si ma mut la nextul lui;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t block_info = *((block_t *)current_block->data);
 
 		dll_node_t *current_miniblock = block_info.miniblock_list->head;
-		while (current_miniblock != NULL) {
+		while (current_miniblock) {
 			miniblock_t miniblock_info = *((miniblock_t *)current_miniblock->data);
 			free(miniblock_info.rw_buffer);
 			current_miniblock = current_miniblock->next;
@@ -72,7 +74,7 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 	int index_block_prev = -1;
 	int index_block_next = -1;
 	dll_node_t *prev_block = NULL;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t block_info = *((block_t *)current_block->data);
 		if (block_info.start_address + block_info.size - 1 >= address &&
 			block_info.start_address <= address + size - 1) {
@@ -116,8 +118,9 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 	if (index_block_prev != -1) { // am gasit block tangent precedent;
 	 	// fac conexiunile
 	 	dll_node_t *removed = dll_remove_nth_node(arena->alloc_list, arena->alloc_list->size);
-	 	block_t *prev_block_info = ((block_t *)prev_block->data);
-	 	dll_node_t *last_mini_block = dll_get_nth_node(prev_block_info->miniblock_list, prev_block_info->miniblock_list->size);
+	 	block_t prev_block_info = *((block_t *)prev_block->data);
+	 	dll_node_t *last_mini_block = dll_get_nth_node(prev_block_info.miniblock_list, prev_block_info.miniblock_list->size - 1);
+		// printf("%d", ((miniblock_t *)last_mini_block->data)->start_address);
 	 	last_mini_block->next = ((block_t *)removed->data)->miniblock_list->head;
 	 	((block_t *)removed->data)->miniblock_list->head->prev = last_mini_block;
 	 	// schimb sizeurile
@@ -139,14 +142,14 @@ void free_block(arena_t *arena, const uint64_t address)
 	// miniblock, daca nu, continui sa parcurg blockurile.
 	dll_node_t *current_block = arena->alloc_list->head;
 	int index_block = 0;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
 		if (address >= block_info->start_address && address <=
 			block_info->start_address + block_info->size - 1) {
 			// Incep sa parcurg miniblockurile.
 			dll_node_t *current_miniblock = block_info->miniblock_list->head;
 			int index_miniblock = 0;
-			while (current_miniblock != NULL) {
+			while (current_miniblock) {
 				miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
 				if (miniblock_info->start_address == address) {
 
@@ -206,15 +209,14 @@ void free_block(arena_t *arena, const uint64_t address)
 		current_block = current_block->next;
 	}
 	// Nu am gasit adresa alocata.
-	if (current_block == NULL)
-		printf("Invalid address for free.\n");
+	printf("Invalid address for free.\n");
 }
 
 void read(arena_t *arena, uint64_t address, uint64_t size)
 {
 	dll_node_t *current_block = arena->alloc_list->head;
 	long unsigned int found = 0;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
 		if (address >= block_info->start_address && address <=
 			block_info->start_address + block_info->size - 1) {
@@ -224,7 +226,7 @@ void read(arena_t *arena, uint64_t address, uint64_t size)
 			// Sunt la blockul care trebuie
 			// Incep sa parcurg miniblockurile.
 			dll_node_t *current_miniblock = block_info->miniblock_list->head;
-			while (current_miniblock != NULL) {
+			while (current_miniblock) {
 				miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
 				for (long unsigned int index_buffer = 0; index_buffer <= miniblock_info->size - 1; ++index_buffer) {
 					if (miniblock_info->start_address + index_buffer >= address
@@ -244,7 +246,7 @@ void read(arena_t *arena, uint64_t address, uint64_t size)
 				}
 				current_miniblock = current_miniblock->next;
 			}
-			if (found < size)
+			if (found <= size)
 				printf("\n");
 			return;
 		}
@@ -258,7 +260,7 @@ void write(arena_t *arena, const uint64_t address, const uint64_t size, int8_t *
 {
 	dll_node_t *current_block = arena->alloc_list->head;
 	int index_data = 0;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
 		if (address >= block_info->start_address && address <=
 			block_info->start_address + block_info->size - 1) {
@@ -269,11 +271,11 @@ void write(arena_t *arena, const uint64_t address, const uint64_t size, int8_t *
 			// Sunt la blockul care trebuie
 			// Incep sa parcurg miniblockurile.
 			dll_node_t *current_miniblock = block_info->miniblock_list->head;
-			while (current_miniblock != NULL) {
+			while (current_miniblock) {
 				miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
-				for (long unsigned int index_buffer = 0; index_buffer <= miniblock_info->size - 1; ++index_buffer) {
+				for (unsigned long index_buffer = 0; index_buffer <= miniblock_info->size - 1; ++index_buffer) {
 					if (miniblock_info->start_address + index_buffer >= address
-						&& miniblock_info->start_address + index_buffer <= address + size - 1) {
+						&& miniblock_info->start_address + index_buffer <= address + size) {
 							if (((int)miniblock_info->perm) & (1 << 1)) {
 								if (to_print == 1) {
 									printf("Warning: size was bigger than the block size. Writing %ld characters.\n", block_info->size);
@@ -302,7 +304,7 @@ size_t full_memory(const arena_t *arena)
 {
 	size_t memory = 0;
 	dll_node_t *current_block = arena->alloc_list->head;
-	while (current_block != NULL) {
+	while (current_block) {
 		memory += ((block_t *)current_block->data)->size;
 		current_block = current_block->next;
 	}
@@ -313,7 +315,7 @@ int number_miniblocks(const arena_t *arena)
 {
 	int number = 0;
 	dll_node_t *current_block = arena->alloc_list->head;
-	while (current_block != NULL) {
+	while (current_block) {
 		number += ((block_t *)current_block->data)->miniblock_list->size;
 		current_block = current_block->next;
 	}
@@ -326,18 +328,18 @@ void pmap(const arena_t *arena)
 	printf("Free memory: 0x%lX bytes\n", arena->arena_size - full_memory(arena));
 	printf("Number of allocated blocks: %d\n", arena->alloc_list->size);
 	printf("Number of allocated miniblocks: %d\n", number_miniblocks(arena));
-	if (number_miniblocks(arena) != 0)
+	if (number_miniblocks(arena))
 		printf("\n");
 	int index_block = 1;
 	dll_node_t *current_block = arena->alloc_list->head;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
 		printf("Block %d begin\n", index_block);
 		printf("Zone: 0x%lX - 0x%lX\n", block_info->start_address,
 				block_info->start_address + block_info->size);
 		dll_node_t *current_miniblock = block_info->miniblock_list->head;
 		int miniblock_index = 1;
-		while (current_miniblock != NULL) {
+		while (current_miniblock) {
 			miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
 			printf("Miniblock %d:\t\t0x%lX\t\t-\t\t0x%lX\t\t| ", miniblock_index,
 					miniblock_info->start_address, miniblock_info->start_address
@@ -350,7 +352,7 @@ void pmap(const arena_t *arena)
 		current_block = current_block->next;
 		printf("Block %d end\n", index_block);
 		index_block++;
-		if (current_block != NULL)
+		if (current_block)
 			printf("\n");
 	}
 }
@@ -358,19 +360,19 @@ void pmap(const arena_t *arena)
 void mprotect(arena_t *arena, uint64_t address, int8_t *permission)
 {
 	dll_node_t *current_block = arena->alloc_list->head;
-	while (current_block != NULL) {
+	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
 		if (address >= block_info->start_address && address <=
 			block_info->start_address + block_info->size - 1) {
 			dll_node_t *current_miniblock = block_info->miniblock_list->head;
-			while (current_miniblock != NULL) {
+			while (current_miniblock) {
 				miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
-				if (miniblock_info->start_address >= address) {
+				if (miniblock_info->start_address == address) {
 					miniblock_info->perm = *permission;
+					return;
 				}
 				current_miniblock = current_miniblock->next;
 			}
-			return;
 		}
 		current_block = current_block->next;
 	}
