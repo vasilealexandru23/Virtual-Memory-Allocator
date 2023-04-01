@@ -48,9 +48,11 @@ void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n, const void *da
 	dll_node_t *curr_node = list->head;
 	while (--n)
 		curr_node = curr_node->next;
+	dll_node_t *temp2 = curr_node->next;
 	new_node->next = curr_node->next;
 	new_node->prev = curr_node;
 	curr_node->next = new_node;
+	temp2->prev = new_node;
 	list->size++;
 }
 

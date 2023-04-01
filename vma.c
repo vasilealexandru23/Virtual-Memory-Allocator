@@ -69,11 +69,10 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 	}
 	// Parcurg fiecare block si \u00eei verific daca memoria alocata 
 	// se suprapune cu cea a blockului pe care vreau sa il inserez.
+
+
+	int index_insert = 0;	
 	dll_node_t *current_block = arena->alloc_list->head;
-	int index_block = 0;
-	int index_block_prev = -1;
-	int index_block_next = -1;
-	dll_node_t *prev_block = NULL;
 	while (current_block) {
 		block_t block_info = *((block_t *)current_block->data);
 		if (block_info.start_address + block_info.size - 1 >= address &&
@@ -81,15 +80,13 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 			printf("This zone was already allocated.\n");
 			return;
 		}
-		if (block_info.start_address + block_info.size == address) {
-			index_block_prev = index_block;
-			prev_block = current_block;
-		}
-		if (block_info.start_address == address + size)
-			index_block_next = index_block;
+		if (address + size <= block_info.start_address)
+			break;
+		index_insert++;
 		current_block = current_block->next;
-		index_block++;
 	}
+
+
 	// Aloc memorie pentru un nou block.
 	block_t new_block = create_block_t(address, size);
 	// Aloc memorie pentru o noua lista de miniblockuri.
@@ -97,9 +94,8 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 	// Adaug noul miniblock in lista de miniblockuri din block - ul curent.
 	dll_add_nth_node(new_block.miniblock_list, 0, &new_miniblock);
 	// check daca am blockuri tangente
-	if (index_block_next != -1) { // am gasit block tangent urmator;
-		// printf("%d", index_block_next);
-		dll_node_t *removed = dll_remove_nth_node(arena->alloc_list, index_block_next);
+	if (current_block && address + size == ((block_t *)current_block->data)->start_address) { // block tangent urmator
+		dll_node_t *removed = dll_remove_nth_node(arena->alloc_list, index_insert);
 		/// concatenez miniblockurile
 		new_block.miniblock_list->head->next = ((block_t *)removed->data)->miniblock_list->head;
 		((block_t *)removed->data)->miniblock_list->head->prev = new_block.miniblock_list->head;
@@ -110,22 +106,19 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 		free(removed->data);
 		free(removed);
 		// grija la freeuri
-		dll_add_nth_node(arena->alloc_list, arena->alloc_list->size, &new_block);
-	} else {
-		dll_add_nth_node(arena->alloc_list, arena->alloc_list->size, &new_block);
 	}
-
-	if (index_block_prev != -1) { // am gasit block tangent precedent;
+	dll_add_nth_node(arena->alloc_list, index_insert, &new_block);
+	current_block = dll_get_nth_node(arena->alloc_list, index_insert);
+	if (current_block->prev && ((block_t *)current_block->prev->data)->start_address + ((block_t *)current_block->prev->data)->size == address) {
 	 	// fac conexiunile
-	 	dll_node_t *removed = dll_remove_nth_node(arena->alloc_list, arena->alloc_list->size);
-	 	block_t prev_block_info = *((block_t *)prev_block->data);
+	 	dll_node_t *removed = dll_remove_nth_node(arena->alloc_list, index_insert);
+	 	block_t prev_block_info = *((block_t *)current_block->prev->data);
 	 	dll_node_t *last_mini_block = dll_get_nth_node(prev_block_info.miniblock_list, prev_block_info.miniblock_list->size - 1);
-		// printf("%d", ((miniblock_t *)last_mini_block->data)->start_address);
 	 	last_mini_block->next = ((block_t *)removed->data)->miniblock_list->head;
 	 	((block_t *)removed->data)->miniblock_list->head->prev = last_mini_block;
 	 	// schimb sizeurile
-	 	((block_t *)prev_block->data)->miniblock_list->size += ((block_t *)removed->data)->miniblock_list->size;
-	 	((block_t *)prev_block->data)->size += ((block_t *)removed->data)->size;
+	 	((block_t *)current_block->prev->data)->miniblock_list->size += ((block_t *)removed->data)->miniblock_list->size;
+	 	((block_t *)current_block->prev->data)->size += ((block_t *)removed->data)->size;
 	 	// dau free
 		free(((block_t *)removed->data)->miniblock_list);
 		free(removed->data);
@@ -194,7 +187,7 @@ void free_block(arena_t *arena, const uint64_t address)
 						block_t new_block = create_block_t(miniblock_info->start_address, size_miniblockuri_ramase);
 						new_block.miniblock_list->head = current_miniblock;
 						new_block.miniblock_list->size = miniblocuri_ramase;
-						dll_add_nth_node(arena->alloc_list, arena->alloc_list->size, &new_block);
+						dll_add_nth_node(arena->alloc_list, index_block + 1, &new_block);
 						// Sterg primul nod
 						free_block(arena, miniblock_info->start_address);
 					}
