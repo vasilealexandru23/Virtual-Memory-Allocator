@@ -3,6 +3,7 @@
 doubly_linked_list_t *dll_create(unsigned int data_size)
 {
 	doubly_linked_list_t *list = malloc(sizeof(doubly_linked_list_t));
+	DIE(!list, "Doubly_linked_list malloc failed !");
 	list->head = NULL;
 	list->data_size = data_size;
 	list->size = 0;
@@ -20,10 +21,13 @@ dll_node_t *dll_get_nth_node(doubly_linked_list_t *list, unsigned int n)
 	return current;
 }
 
-void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n, const void *data)
+void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n,
+					  const void *data)
 {
 	dll_node_t *new_node = malloc(sizeof(dll_node_t));
+	DIE(!new_node, "New_node malloc failed !");
 	new_node->data = malloc(list->data_size);
+	DIE(!new_node->data, "New_node->data malloc failed !");
 	memcpy(new_node->data, data, list->data_size);
 	if (list->size == 0)
 		n = 0;
@@ -44,15 +48,15 @@ void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n, const void *da
 		new_node->prev = curr_node;
 		list->size++;
 		return;
-	} 
+	}
 	dll_node_t *curr_node = list->head;
 	while (--n)
 		curr_node = curr_node->next;
-	dll_node_t *temp2 = curr_node->next;
+	dll_node_t *next_node = curr_node->next;
 	new_node->next = curr_node->next;
 	new_node->prev = curr_node;
 	curr_node->next = new_node;
-	temp2->prev = new_node;
+	next_node->prev = new_node;
 	list->size++;
 }
 
@@ -61,7 +65,7 @@ dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n)
 	if (list->size == 0)
 		return NULL;
 	if (n >= list->size - 1)
-	    n = list->size - 1;
+		n = list->size - 1;
 	if (n == 0) {
 		dll_node_t *aux = list->head;
 		if (list->size > 1) {
@@ -74,11 +78,10 @@ dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n)
 		return aux;
 	}
 	dll_node_t *current = list->head;
-	while (n--) {
-	    current = current->next;
-	}
-    dll_node_t *aux = current;
-	if (!current->next) { // TAIL
+	while (n--)
+		current = current->next;
+	dll_node_t *aux = current;
+	if (!current->next) {
 		dll_node_t *prev_node = current->prev;
 		prev_node->next = NULL;
 		list->size--;
@@ -97,7 +100,7 @@ void dll_free(doubly_linked_list_t **pp_list)
 	if ((*pp_list)->size == 0) {
 		free((*pp_list));
 		return;
-	}	
+	}
 	dll_node_t *prev_node = NULL;
 	dll_node_t *curr_node = (*pp_list)->head;
 	while (curr_node) {

@@ -1,14 +1,15 @@
 #include "utils.h"
 
-void *alloc_data(const uint64_t bytes) {
+void *alloc_data(const uint64_t bytes)
+{
 	void *data = malloc(bytes);
-	if (!data) {
+	if (!data)
 		printf("Eroare la alocare");
-	}
 	return data;
 }
 
-void print_permissions(uint8_t permissions_value) {
+void print_permissions(uint8_t permissions_value)
+{
 	char *permissions = calloc((PERMISSION_SIZE + 1), sizeof(char));
 	char permissions_options[] = "RWX";
 	for (int i = 0; i < PERMISSION_SIZE; ++i)
