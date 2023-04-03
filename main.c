@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include "vma.h"
+#include <stdio.h>
 
 #define MAX_COMMAND_SIZE 64
 #define DATA_LEN 100
