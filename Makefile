@@ -14,9 +14,9 @@ run_vma:
 	./vma
 
 pack:
-	zip -FSr 314CA_VasileAlexandruGabriel_Tema3.zip README Makefile *.c *.h
+	zip -FSr 314CA_VasileAlexandruGabriel_Tema1.zip README.md Makefile *.c *.h
 
 clean:
-	rm -f *.o *.h.gch
+	rm -f $(TARGETS)
 
 .PHONY: pack

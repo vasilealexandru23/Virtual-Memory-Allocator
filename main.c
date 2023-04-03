@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #define MAX_COMMAND_SIZE 64
-#define DATA_LEN 100
+#define DATA_LEN 10000
 
 int main(void)
 {
@@ -31,16 +31,24 @@ int main(void)
 			scanf("%lu%lu", &address, &size);
 			read(arena, address, size);
 		} else if (!strcmp(command, "WRITE")) {
-			uint64_t address, size;
-			scanf("%lu%lu ", &address, &size);
-			int8_t *data = malloc(size);
-
-			char to_write[DATA_LEN];
-			fgets(to_write, DATA_LEN, stdin);
-			to_write[(int)strlen(to_write)] = '\0';
-
-			memcpy(data, to_write, size);
+			uint64_t address, size, error = 10000;
+			scanf("%lu%lu", &address, &size);
+			int8_t *data = malloc(size + error);
+			getchar();
+			char *full_text = calloc(size + error, sizeof(char));
+			uint64_t cat_am_citit = 0;
+			while (cat_am_citit < size) {
+				char to_write[DATA_LEN];
+				if (fgets(to_write, DATA_LEN, stdin)) {
+					to_write[(int)strlen(to_write)] = '\0';
+					strcat(full_text, to_write);
+					cat_am_citit += strlen(to_write);
+				}
+			}
+			full_text[size] = '\0';
+			memcpy(data, full_text, size);
 			write(arena, address, size, data);
+			free(full_text);
 			free(data);
 		} else if (!strcmp(command, "PMAP")) {
 			pmap(arena);
@@ -69,3 +77,4 @@ int main(void)
 	free(command);
 	return 0;
 }
+

@@ -30,20 +30,21 @@ void dealloc_arena(arena_t *arena);
 
 int check_tangent_blocks_left(dll_node_t *curr_block, const uint64_t address);
 int check_tangent_blocks_right(dll_node_t *curr_block, const uint64_t size,
-			       			   const uint64_t address);
-void remove_block_data (dll_node_t *curr_block);
+							   const uint64_t address);
+void remove_block_data(dll_node_t *curr_block);
 
 void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size);
 void free_block(arena_t *arena, const uint64_t address);
 
 int check_valid_zone(arena_t *arena, uint64_t address, uint64_t size,
-		     		 int perm_bit);
+					 int perm_bit);
 void read(arena_t *arena, uint64_t address, uint64_t size);
 void write(arena_t *arena, const uint64_t address, const uint64_t size,
-	   int8_t *data);
+		   int8_t *data);
 
 size_t free_memory(const arena_t *arena);
 int number_miniblocks(const arena_t *arena);
 
 void pmap(const arena_t *arena);
 void mprotect(arena_t *arena, uint64_t address, int8_t *permission);
+

@@ -13,8 +13,8 @@
 			fprintf(stderr, "(%s, %d): ",				\
 					__FILE__, __LINE__);				\
 			perror(call_description);					\
-			exit(errno);				        		\
-		}							    				\
+			exit(errno);								\
+		}												\
 	} while (0)
 
 typedef struct dll_node_t dll_node_t;

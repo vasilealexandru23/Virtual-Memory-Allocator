@@ -16,7 +16,7 @@ miniblock_t create_miniblock_t(const uint64_t address, const uint64_t size)
 	new_miniblock.start_address = address;
 	new_miniblock.size = size;
 	new_miniblock.perm = 6;
-	new_miniblock.rw_buffer = malloc(size);
+	new_miniblock.rw_buffer = calloc(size, sizeof(char));
 	return new_miniblock;
 }
 
@@ -73,7 +73,7 @@ int check_tangent_blocks_left(dll_node_t *curr_block, const uint64_t address)
 }
 
 int check_tangent_blocks_right(dll_node_t *curr_block, const uint64_t size,
-			       const uint64_t address)
+							   const uint64_t address)
 {
 	// Functie prin care verific daca exista sau
 	// nu block tangent la dreapta blocului curent
@@ -149,7 +149,7 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 		    *((block_t *)current_block->prev->data);
 		dll_node_t *last_miniblock =
 		    dll_get_nth_node(prev_block_info.miniblock_list,
-				     prev_block_info.miniblock_list->size - 1);
+				     		 prev_block_info.miniblock_list->size - 1);
 		last_miniblock->next =
 		    ((block_t *)removed->data)->miniblock_list->head;
 		((block_t *)removed->data)->miniblock_list->head->prev =
@@ -176,11 +176,9 @@ void free_block(arena_t *arena, const uint64_t address)
 	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
 		if (address >= block_info->start_address &&
-		    address <=
-			block_info->start_address + block_info->size - 1) {
+		    address < block_info->start_address + block_info->size) {
 			// Incep sa parcurg miniblockurile.
-			dll_node_t *current_miniblock =
-			    block_info->miniblock_list->head;
+			dll_node_t *current_miniblock = block_info->miniblock_list->head;
 			int index_miniblock = 0;
 			while (current_miniblock) {
 				miniblock_t *miniblock_info =
@@ -199,32 +197,23 @@ void free_block(arena_t *arena, const uint64_t address)
 				// sterg. Daca e la inceput, sau la final il
 				// sterg si dupa verific daca mai exista alt
 				// nod;
-				if (!current_miniblock->prev ||
-				    !current_miniblock->next) {
+				if (!current_miniblock->prev || !current_miniblock->next) {
 					dll_node_t *removed =
-					    dll_remove_nth_node(
-						block_info->miniblock_list,
-						index_miniblock);
-					miniblock_t *removed_info =
-					    ((miniblock_t *)removed->data);
+					    dll_remove_nth_node(block_info->miniblock_list,
+											index_miniblock);
+					miniblock_t *removed_info = ((miniblock_t *)removed->data);
 					if (!removed->prev && removed->next)
-						block_info->start_address =
-						    ((miniblock_t *)
-							 removed->next->data)
-							->start_address;
+						block_info->start_address = ((miniblock_t *)removed->next->data)->start_address;
 					block_info->size -= removed_info->size;
 					free(removed_info->rw_buffer);
 					free(removed_info);
 					free(removed);
 					// Verific daca mai exista miniblocuri
 					// in bloc.
-					if (block_info->miniblock_list->size ==
-					    0) {
-						dll_free(&block_info
-							      ->miniblock_list);
-						removed = dll_remove_nth_node(
-						    arena->alloc_list,
-						    index_block);
+					if (!block_info->miniblock_list->size) {
+						dll_free(&block_info->miniblock_list);
+						removed = dll_remove_nth_node(arena->alloc_list,
+						    						  index_block);
 						free(removed->data);
 						free(removed);
 					}
@@ -232,43 +221,29 @@ void free_block(arena_t *arena, const uint64_t address)
 					// Trebuie sa creez alt block;
 					current_miniblock->prev->next = NULL;
 					// printf("%d", index_miniblock);
-					block_info->miniblock_list->size =
-					    index_miniblock;
+					block_info->miniblock_list->size = index_miniblock;
 					// Din sizeul total al unui miniblock,
 					// scad sizeul restul miniblocurilor;
-					size_t size_miniblockuri_ramase =
-					    miniblock_info->size;
+					size_t size_miniblockuri_ramase = miniblock_info->size;
 					int miniblocuri_ramase = 1;
-					dll_node_t *aux =
-					    current_miniblock->next;
+					dll_node_t *aux = current_miniblock->next;
 					while (aux) {
-						size_miniblockuri_ramase +=
-						    ((miniblock_t *)aux->data)
-							->size;
+						size_miniblockuri_ramase += ((miniblock_t *)aux->data)->size;
 						miniblocuri_ramase++;
 						aux = aux->next;
 					}
-					block_info->size -=
-					    size_miniblockuri_ramase;
+					block_info->size -= size_miniblockuri_ramase;
 					// pana aici pare bine;
-					current_miniblock->prev =
-					    NULL; // Acum il fac capul liste de
+					current_miniblock->prev = NULL; // Acum il fac capul liste de
 						  // miniblocuri al unui nou
 						  // bloc
-					block_t new_block = create_block_t(
-					    miniblock_info->start_address,
-					    size_miniblockuri_ramase);
-					new_block.miniblock_list->head =
-					    current_miniblock;
-					new_block.miniblock_list->size =
-					    miniblocuri_ramase;
-					dll_add_nth_node(arena->alloc_list,
-							 index_block + 1,
-							 &new_block);
+					block_t new_block = create_block_t(miniblock_info->start_address,
+					    				size_miniblockuri_ramase);
+					new_block.miniblock_list->head = current_miniblock;
+					new_block.miniblock_list->size = miniblocuri_ramase;
+					dll_add_nth_node(arena->alloc_list, index_block + 1, &new_block);
 					// Sterg primul nod
-					free_block(
-					    arena,
-					    miniblock_info->start_address);
+					free_block(arena, miniblock_info->start_address);
 				}
 				return;
 			}
@@ -281,7 +256,7 @@ void free_block(arena_t *arena, const uint64_t address)
 }
 
 int check_valid_zone(arena_t *arena, uint64_t address, uint64_t size,
-		     		 int perm_bit)
+					 int perm_bit)
 {
 	// Functie prin care verific daca addresa de unde
 	// dau read/write exista si are permisiunile aferente.
@@ -300,12 +275,11 @@ int check_valid_zone(arena_t *arena, uint64_t address, uint64_t size,
 				miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
 				for (unsigned long index_buffer = 0; index_buffer <= miniblock_info->size - 1; ++index_buffer) {
 					if (miniblock_info->start_address + index_buffer >= address
-						&& miniblock_info->start_address + index_buffer <= address + size - 1) {
-						if (((int)miniblock_info->perm) & (1 << perm_bit)) {
+						&& miniblock_info->start_address + index_buffer < address + size) {
+						if (((int)miniblock_info->perm) & (1 << perm_bit))
 							chars++;
-						} else {
+						else
 							invalid_permision = 1;
-						}
 					}
 				}
 				current_miniblock = current_miniblock->next;
@@ -365,7 +339,8 @@ void read(arena_t *arena, uint64_t address, uint64_t size)
 				if (miniblock_info->start_address + idx_buffer >= address &&
 					miniblock_info->start_address + idx_buffer < address + size) {
 					found++;
-					printf("%c", ((char *)(miniblock_info->rw_buffer))[idx_buffer]);
+					if (((char *)miniblock_info->rw_buffer)[idx_buffer] != '\0')
+						printf("%c", ((char *)(miniblock_info->rw_buffer))[idx_buffer]);
 				}
 				idx_buffer++;
 			}
@@ -387,8 +362,8 @@ void write(arena_t *arena, const uint64_t address, const uint64_t size, int8_t *
 		block_t *block_info = ((block_t *)current_block->data);
 		if (!(address >= block_info->start_address && address <=
 			block_info->start_address + block_info->size - 1)) {
-				current_block = current_block->next;
-				continue;
+			current_block = current_block->next;
+			continue;
 		}
 		// Sunt la blockul care trebuie
 		// Incep sa parcurg miniblockurile.
@@ -398,8 +373,9 @@ void write(arena_t *arena, const uint64_t address, const uint64_t size, int8_t *
 			unsigned long idx_buffer = 0;
 			while (idx_buffer <= miniblock_info->size - 1) {
 				if (miniblock_info->start_address + idx_buffer >= address &&
-					miniblock_info->start_address + idx_buffer <= address + size) {
-					memcpy(((int8_t *)miniblock_info->rw_buffer) + idx_buffer, data + index_data, 1);
+					miniblock_info->start_address + idx_buffer < address + size) {
+					memcpy(((int8_t *)miniblock_info->rw_buffer) + idx_buffer,
+						   data + index_data, 1);
 					index_data++;
 				}
 				idx_buffer++;
@@ -496,3 +472,4 @@ void mprotect(arena_t *arena, uint64_t address, int8_t *permission)
 	}
 	printf("Invalid address for mprotect.\n");
 }
+

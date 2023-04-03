@@ -21,3 +21,4 @@ void print_permissions(uint8_t permissions_value)
 	printf("%s\n", permissions);
 	free(permissions);
 }
+
