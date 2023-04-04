@@ -149,7 +149,7 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 		    *((block_t *)current_block->prev->data);
 		dll_node_t *last_miniblock =
 		    dll_get_nth_node(prev_block_info.miniblock_list,
-				     		 prev_block_info.miniblock_list->size - 1);
+							 prev_block_info.miniblock_list->size - 1);
 		last_miniblock->next =
 		    ((block_t *)removed->data)->miniblock_list->head;
 		((block_t *)removed->data)->miniblock_list->head->prev =
@@ -162,96 +162,88 @@ void alloc_block(arena_t *arena, const uint64_t address, const uint64_t size)
 		// dau free
 		remove_block_data(removed);
 	}
-	// AMIN
 }
 
 void free_block(arena_t *arena, const uint64_t address)
 {
-	// parcurg blockurile, verific daca adresa de unde vreau sa sterg
-	// apartine intervalului address_block, address_block + size - 1;
-	// daca da, atunci acela e blockul la care vreau sa sterg un anumit
-	// miniblock, daca nu, continui sa parcurg blockurile.
 	dll_node_t *current_block = arena->alloc_list->head;
 	int index_block = 0;
 	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
-		if (address >= block_info->start_address &&
-		    address < block_info->start_address + block_info->size) {
-			// Incep sa parcurg miniblockurile.
-			dll_node_t *current_miniblock = block_info->miniblock_list->head;
-			int index_miniblock = 0;
-			while (current_miniblock) {
-				miniblock_t *miniblock_info =
-				    ((miniblock_t *)current_miniblock->data);
-
-				// Daca nu am gasit inca miniblockul, continui
-				// parcurgerea.
-				if (miniblock_info->start_address != address) {
-					current_miniblock =
-					    current_miniblock->next;
-					index_miniblock++;
-					continue;
-				}
-
-				// Am gasit miniblockul pe care vreau sa il
-				// sterg. Daca e la inceput, sau la final il
-				// sterg si dupa verific daca mai exista alt
-				// nod;
-				if (!current_miniblock->prev || !current_miniblock->next) {
-					dll_node_t *removed =
-					    dll_remove_nth_node(block_info->miniblock_list,
-											index_miniblock);
-					miniblock_t *removed_info = ((miniblock_t *)removed->data);
-					if (!removed->prev && removed->next)
-						block_info->start_address = ((miniblock_t *)removed->next->data)->start_address;
-					block_info->size -= removed_info->size;
-					free(removed_info->rw_buffer);
-					free(removed_info);
-					free(removed);
-					// Verific daca mai exista miniblocuri
-					// in bloc.
-					if (!block_info->miniblock_list->size) {
-						dll_free(&block_info->miniblock_list);
-						removed = dll_remove_nth_node(arena->alloc_list,
-						    						  index_block);
-						free(removed->data);
-						free(removed);
-					}
-				} else {
-					// Trebuie sa creez alt block;
-					current_miniblock->prev->next = NULL;
-					// printf("%d", index_miniblock);
-					block_info->miniblock_list->size = index_miniblock;
-					// Din sizeul total al unui miniblock,
-					// scad sizeul restul miniblocurilor;
-					size_t size_miniblockuri_ramase = miniblock_info->size;
-					int miniblocuri_ramase = 1;
-					dll_node_t *aux = current_miniblock->next;
-					while (aux) {
-						size_miniblockuri_ramase += ((miniblock_t *)aux->data)->size;
-						miniblocuri_ramase++;
-						aux = aux->next;
-					}
-					block_info->size -= size_miniblockuri_ramase;
-					// pana aici pare bine;
-					current_miniblock->prev = NULL; // Acum il fac capul liste de
-						  // miniblocuri al unui nou
-						  // bloc
-					block_t new_block = create_block_t(miniblock_info->start_address,
-					    				size_miniblockuri_ramase);
-					new_block.miniblock_list->head = current_miniblock;
-					new_block.miniblock_list->size = miniblocuri_ramase;
-					dll_add_nth_node(arena->alloc_list, index_block + 1, &new_block);
-					// Sterg primul nod
-					free_block(arena, miniblock_info->start_address);
-				}
-				return;
+		// Daca nu am gasit blockul care sa contina miniblockul
+		// dat de utilizator, continui cautarea.
+		if (!(address >= block_info->start_address &&
+		      address < block_info->start_address + block_info->size)) {
+		    index_block++;
+			current_block = current_block->next;
+			continue;
+		}
+		// Parcurg miniblockurile.
+		dll_node_t *current_miniblock = block_info->miniblock_list->head;
+		int index_miniblock = 0;
+		while (current_miniblock) {
+			miniblock_t *miniblock_info =
+				((miniblock_t *)current_miniblock->data);
+			// Daca nu am gasit inca miniblockul, continui cautarea.
+			if (miniblock_info->start_address != address) {
+				current_miniblock =
+					current_miniblock->next;
+				index_miniblock++;
+				continue;
 			}
+			// Daca miniblockul curent (cel ce trebuie sters) este fie la
+			// capatul listei, fie la inceputul listei, il sterg si verific
+			// daca blockul mai contine miniblockuri. In caz contrat, il sterg
+			// din lista de blockuri.
+			if (!current_miniblock->prev || !current_miniblock->next) {
+				dll_node_t *removed =
+					dll_remove_nth_node(block_info->miniblock_list,
+										index_miniblock);
+				miniblock_t *removed_info = ((miniblock_t *)removed->data);
+				if (!removed->prev && removed->next)
+					block_info->start_address =
+					    ((miniblock_t *)removed->next->data)->start_address;
+				block_info->size -= removed_info->size;
+				free(removed_info->rw_buffer);
+				free_node(removed);
+				// Verific daca mai exista miniblocuri
+				// in bloc.
+				if (!block_info->miniblock_list->size) {
+					dll_free(&block_info->miniblock_list);
+					removed = dll_remove_nth_node(arena->alloc_list,
+												  index_block);
+					free_node(removed);
+				}
+			} else {
+				current_miniblock->prev->next = NULL;
+				block_info->miniblock_list->size = index_miniblock;
+				// scad sizeul restul miniblocurilor;
+				size_t size_miniblockuri_ramase = miniblock_info->size;
+				int miniblocuri_ramase = 1;
+				dll_node_t *aux = current_miniblock->next;
+				while (aux) {
+					size_miniblockuri_ramase +=
+					    ((miniblock_t *)aux->data)->size;
+					miniblocuri_ramase++;
+					aux = aux->next;
+				}
+				block_info->size -= size_miniblockuri_ramase;
+				current_miniblock->prev = NULL;
+				block_t new_block = create_block_t
+				    (miniblock_info->start_address, size_miniblockuri_ramase);
+				new_block.miniblock_list->head = current_miniblock;
+				new_block.miniblock_list->size = miniblocuri_ramase;
+				dll_add_nth_node(arena->alloc_list,
+								 index_block + 1, &new_block);
+				// Sterg primul nod
+				free_block(arena, miniblock_info->start_address);
+			}
+			return;
 		}
 		index_block++;
 		current_block = current_block->next;
 	}
-	// Nu am gasit adresa alocata.
+	// Nu am gasit adresa blockului alocata.
 	printf("Invalid address for free.\n");
 }
 
@@ -266,27 +258,31 @@ int check_valid_zone(arena_t *arena, uint64_t address, uint64_t size,
 	int to_print_overflow = 0;
 	while (current_block) {
 		block_t *block_info = ((block_t *)current_block->data);
-		if (address >= block_info->start_address && address <=
-			block_info->start_address + block_info->size - 1) {
-			if (block_info->start_address + block_info->size < address + size)
-				to_print_overflow = 1;
-			dll_node_t *current_miniblock = block_info->miniblock_list->head;
-			while (current_miniblock) {
-				miniblock_t *miniblock_info = ((miniblock_t *)current_miniblock->data);
-				for (unsigned long index_buffer = 0; index_buffer <= miniblock_info->size - 1; ++index_buffer) {
-					if (miniblock_info->start_address + index_buffer >= address
-						&& miniblock_info->start_address + index_buffer < address + size) {
-						if (((int)miniblock_info->perm) & (1 << perm_bit))
-							chars++;
-						else
-							invalid_permision = 1;
-					}
-				}
-				current_miniblock = current_miniblock->next;
-			}
-			break;
+		if (!(address >= block_info->start_address && address <=
+			block_info->start_address + block_info->size - 1)) {
+			current_block = current_block->next;
+			continue;
 		}
-		current_block = current_block->next;
+		if (block_info->start_address + block_info->size < address + size)
+			to_print_overflow = 1;
+		dll_node_t *curr_miniblock = block_info->miniblock_list->head;
+		while (curr_miniblock) {
+			miniblock_t *miniblock_info = ((miniblock_t *)curr_miniblock->data);
+			unsigned long idx_buffer = 0;
+			unsigned long upper_bound = address + size;
+			while (idx_buffer <= miniblock_info->size - 1) {
+				if (miniblock_info->start_address + idx_buffer >= address &&
+					miniblock_info->start_address + idx_buffer < upper_bound) {
+					if (((int)miniblock_info->perm) & (1 << perm_bit))
+						chars++;
+					else
+						invalid_permision = 1;
+				}
+				idx_buffer++;
+			}
+			curr_miniblock = curr_miniblock->next;
+		}
+		break;
 	}
 	if (invalid_permision) {
 		if (perm_bit == 2)
@@ -295,7 +291,7 @@ int check_valid_zone(arena_t *arena, uint64_t address, uint64_t size,
 			printf("Invalid permissions for write.\n");
 		return 0;
 	}
-	
+
 	if (!chars) {
 		if (perm_bit == 2)
 			printf("Invalid address for read.\n");
@@ -307,10 +303,10 @@ int check_valid_zone(arena_t *arena, uint64_t address, uint64_t size,
 	if (to_print_overflow) {
 		if (perm_bit == 2) {
 			printf("Warning: size was bigger than the block size. Reading "
-		       	"%ld characters.\n", chars);
+				   "%ld characters.\n", chars);
 		} else {
 			printf("Warning: size was bigger than the block size. Writing "
-		       	"%ld characters.\n", chars);
+				   "%ld characters.\n", chars);
 		}
 	}
 	return 1;
@@ -335,12 +331,14 @@ void read(arena_t *arena, uint64_t address, uint64_t size)
 		while (curr_miniblock) {
 			miniblock_t *miniblock_info = ((miniblock_t *)curr_miniblock->data);
 			unsigned long idx_buffer = 0;
+			unsigned long upper_bound = address + size;
+			int8_t *rw_buffer = (int8_t *)miniblock_info->rw_buffer;
 			while (idx_buffer <= miniblock_info->size - 1) {
 				if (miniblock_info->start_address + idx_buffer >= address &&
-					miniblock_info->start_address + idx_buffer < address + size) {
+					miniblock_info->start_address + idx_buffer < upper_bound) {
 					found++;
-					if (((char *)miniblock_info->rw_buffer)[idx_buffer] != '\0')
-						printf("%c", ((char *)(miniblock_info->rw_buffer))[idx_buffer]);
+					if (rw_buffer[idx_buffer] != 0)
+						printf("%c", rw_buffer[idx_buffer]);
 				}
 				idx_buffer++;
 			}
@@ -352,7 +350,8 @@ void read(arena_t *arena, uint64_t address, uint64_t size)
 	}
 }
 
-void write(arena_t *arena, const uint64_t address, const uint64_t size, int8_t *data)
+void write(arena_t *arena, const uint64_t address, const uint64_t size,
+		   int8_t *data)
 {
 	if (!check_valid_zone(arena, address, size, 1))
 		return;
@@ -371,11 +370,12 @@ void write(arena_t *arena, const uint64_t address, const uint64_t size, int8_t *
 		while (curr_miniblock) {
 			miniblock_t *miniblock_info = ((miniblock_t *)curr_miniblock->data);
 			unsigned long idx_buffer = 0;
+			unsigned long upper_bound = address + size;
+			int8_t *rw_buffer = (int8_t *)miniblock_info->rw_buffer;
 			while (idx_buffer <= miniblock_info->size - 1) {
 				if (miniblock_info->start_address + idx_buffer >= address &&
-					miniblock_info->start_address + idx_buffer < address + size) {
-					memcpy(((int8_t *)miniblock_info->rw_buffer) + idx_buffer,
-						   data + index_data, 1);
+					miniblock_info->start_address + idx_buffer < upper_bound) {
+					memcpy(rw_buffer + idx_buffer, data + index_data, 1);
 					index_data++;
 				}
 				idx_buffer++;
@@ -472,4 +472,3 @@ void mprotect(arena_t *arena, uint64_t address, int8_t *permission)
 	}
 	printf("Invalid address for mprotect.\n");
 }
-

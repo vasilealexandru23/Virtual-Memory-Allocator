@@ -37,6 +37,7 @@ void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n,
 					  const void *new_data);
 dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n);
 
+void free_node(dll_node_t *node);
 void dll_free(doubly_linked_list_t **pp_list);
 
 #endif // __DOUBLYLINKEDLIST__

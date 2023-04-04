@@ -47,4 +47,3 @@ int number_miniblocks(const arena_t *arena);
 
 void pmap(const arena_t *arena);
 void mprotect(arena_t *arena, uint64_t address, int8_t *permission);
-

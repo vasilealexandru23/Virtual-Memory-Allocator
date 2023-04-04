@@ -95,6 +95,12 @@ dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n)
 	return aux;
 }
 
+void free_node(dll_node_t *node)
+{
+	free(node->data);
+	free(node);
+}
+
 void dll_free(doubly_linked_list_t **pp_list)
 {
 	if ((*pp_list)->size == 0) {
@@ -104,17 +110,13 @@ void dll_free(doubly_linked_list_t **pp_list)
 	dll_node_t *prev_node = NULL;
 	dll_node_t *curr_node = (*pp_list)->head;
 	while (curr_node) {
-		if (prev_node) {
-			free(prev_node->data);
-			free(prev_node);
-		}
+		if (prev_node)
+			free_node(prev_node);
 		prev_node = curr_node;
 		curr_node = curr_node->next;
 	}
-	if (prev_node) {
-		free(prev_node->data);
-		free(prev_node);
-	}
+	if (prev_node)
+		free_node(prev_node);
 	free((*pp_list));
 	*pp_list = NULL;
 }

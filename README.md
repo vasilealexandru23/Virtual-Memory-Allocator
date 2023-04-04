@@ -26,6 +26,17 @@ de memorie precum malloc() sau calloc(). Acestea marchează ca fiind folosite an
 	impreuna cu cea de miniblock, din interiorul ei. Cum nodurile din lista de
 	blockuri sunt ordonate (dupa adresa de start), trebuie sa aflam pozitie pe care
 	vom insera nodul in lista de blockuri.
+
+	* **FREE BLOCK** :
+
+	* **READ** :
+
+	* **WRITE** :
+
+	* **PMAP** : 
+
+	* **MPROTECT** :
+
 ### Comentarii asupra temei:
 
 * Crezi că ai fi putut realiza o implementare mai bună?
