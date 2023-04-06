@@ -26,12 +26,13 @@ void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n,
 {
 	dll_node_t *new_node = malloc(sizeof(dll_node_t));
 	DIE(!new_node, "New_node malloc failed !");
+
 	new_node->data = malloc(list->data_size);
 	DIE(!new_node->data, "New_node->data malloc failed !");
+
 	memcpy(new_node->data, data, list->data_size);
-	if (list->size == 0)
-		n = 0;
-	if (n == 0) {
+
+	if (!n || !list->size) {
 		new_node->prev = NULL;
 		new_node->next = list->head;
 		if (list->head)
@@ -39,7 +40,9 @@ void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n,
 		list->head = new_node;
 		list->size++;
 		return;
-	} else if (n >= list->size) {
+	}
+
+	if (n >= list->size) {
 		new_node->next = NULL;
 		dll_node_t *curr_node = list->head;
 		while (curr_node->next)
@@ -49,9 +52,11 @@ void dll_add_nth_node(doubly_linked_list_t *list, unsigned int n,
 		list->size++;
 		return;
 	}
+
 	dll_node_t *curr_node = list->head;
 	while (--n)
 		curr_node = curr_node->next;
+
 	dll_node_t *next_node = curr_node->next;
 	new_node->next = curr_node->next;
 	new_node->prev = curr_node;
@@ -64,10 +69,12 @@ dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n)
 {
 	if (list->size == 0)
 		return NULL;
+
 	if (n >= list->size - 1)
 		n = list->size - 1;
+
 	if (n == 0) {
-		dll_node_t *aux = list->head;
+		dll_node_t *to_remove = list->head;
 		if (list->size > 1) {
 			list->head = list->head->next;
 			list->head->prev = NULL;
@@ -75,24 +82,28 @@ dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n)
 			list->head = NULL;
 		}
 		list->size--;
-		return aux;
+		return to_remove;
 	}
+
 	dll_node_t *current = list->head;
 	while (n--)
 		current = current->next;
-	dll_node_t *aux = current;
+
+	dll_node_t *to_remove = current;
+
 	if (!current->next) {
 		dll_node_t *prev_node = current->prev;
 		prev_node->next = NULL;
 		list->size--;
-		return aux;
+		return to_remove;
 	}
+
 	dll_node_t *prev_node = current->prev;
 	dll_node_t *next_node = current->next;
 	prev_node->next = current->next;
 	next_node->prev = current->prev;
 	list->size--;
-	return aux;
+	return to_remove;
 }
 
 void free_node(dll_node_t *node)
@@ -107,16 +118,20 @@ void dll_free(doubly_linked_list_t **pp_list)
 		free((*pp_list));
 		return;
 	}
+
 	dll_node_t *prev_node = NULL;
 	dll_node_t *curr_node = (*pp_list)->head;
+
 	while (curr_node) {
 		if (prev_node)
 			free_node(prev_node);
 		prev_node = curr_node;
 		curr_node = curr_node->next;
 	}
+
 	if (prev_node)
 		free_node(prev_node);
+
 	free((*pp_list));
 	*pp_list = NULL;
 }
