@@ -24,18 +24,43 @@ de memorie precum malloc() sau calloc(). Acestea marchează ca fiind folosite an
 	din inputul dat de utilizator. Verificam daca datele extrase sunt valide, iar
 	in caz contrar afisam un mesaj de eroare. Mai departe, creez structura de block
 	impreuna cu cea de miniblock, din interiorul ei. Cum nodurile din lista de
-	blockuri sunt ordonate (dupa adresa de start), trebuie sa aflam pozitie pe care
-	vom insera nodul in lista de blockuri.
+	blockuri sunt ordonate (dupa adresa de start), trebuie sa aflam pozitia pe care
+	vom insera nodul in lista de blockuri. Mai departe, verificam tangenta la stanga
+	si dreapta. Pentru tangenta la dreapta, stergem blockul respectiv din lista de
+	blockuri si facem conexiunile manual dintre listele de miniblockuri. Adaugam
+	noul block in lista de blockuri. Pentru tangenta la stanga, sterem blockul abia
+	adaugat si facem conexiunile necesare intre miniblockuri. In ambele cazuri de
+	tangenta avem grija si dam update la sizeurile blockurilor si listelor de
+	miniblockuri.
 
-	* **FREE BLOCK** :
+	* **FREE BLOCK** : In aceasta functie cautam blockul care contine miniblockul
+	cu adresa data de utilizator. In cazul in care cautarea s - a terminat si blockul nu a fost gasit afisam un mesaj de eroare. Dupa ce am gasit blockul care contine miniblockul corespunzator, distingem doua cazuri. Primul il constituie cel in care miniblockul se afla fie la inceputul fie la sfarsitul 
+	blockului curent, caz in care il eliminam din lista de miniblockuri, actualizam dimensiunea blockului din care provine si verifiam daca blockul a ramas gol sau nu, caz pentru care, daca a ramas gol, il stergem din lista de blockuri si
+	eliberam memoria alocata. Pentru al doilea caz, avem miniblockul in mijlocul listei de miniblockuri. Construim un nou block, in care adaugam manual lista de miniblockuri corespunzatoare (cea care incepe de la nodul urmator celui sters)
+	si il adaugam in lista de blockuri.
 
-	* **READ** :
+	* **CHECK_VALID_ZONE** : Verificam daca miniblockul de la care incepe adresa data de utilizator este valid(are permisiuni de citire) si este suficient de "mare", adica acopera intreg intervalul dat de utilizator pentru afisare (in caz contrarafisam mesajul de overflow).
 
-	* **WRITE** :
+	* **READ** : Verificam daca miniblockul de la care incepe adresa data de
+	utilizator este valid(prin functia descrisa anterior). Parcurgem blockurile
+	pana la cel care contine miniblockul dat de utilizator. Urmeaza parcurgerea
+	miniblockurilor si afisarea caracter cu caracter a datelor din rw_buffer.
 
-	* **PMAP** : 
+	* **WRITE** : Verificam daca miniblockul de la care incepe adresa data de
+	utilizator este valid(prin functia descrisa anterior). Parcurgem blockurile
+	pana la cel care contine miniblockul dat de utilizator. Urmeaza parcurgerea
+	miniblockurilor si introducerea caracter cu caracter a datelor in rw_buffer.
 
-	* **MPROTECT** :
+	* **PMAP** : Functie prin care afisam toate informatiile despre arena incarcata
+	in memorie. Parcurgem toate blockurile, afisam informatiile cerute de utilizator
+	impreuna cu miniblockurile in formatul impus.
+
+	* **MPROTECT** : Functie prin care atribuim noi permisiuni unui anumit miniblock. Incepem prin a cauta miniblockul cu adresa impusa de utilizator
+	prin parcurgerea blockurilor, apoi pentru fiecare parcurgem lista de miniblockuri, iar in cazul gasirii miniblockului respectiv, schimbam permisiunile. Daca miniblockul nu a fost gasit, afisam la final un mesaj de eroare.
+
+* **Organizarea fisierelor** : In organizarea fisierelor, am pastrat strict comenzile descrise in tema in fisierul original (vma.c). Restul comenzilor ajutatoare functiilor din tema se afla in fisiere diferite (arena_utils.c,
+block_utils.c).
+
 
 ### Comentarii asupra temei:
 

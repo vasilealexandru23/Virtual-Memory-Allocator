@@ -3,7 +3,9 @@
 arena_t *alloc_arena(const uint64_t size)
 {
 	arena_t *arena = (arena_t *)malloc(sizeof(arena_t));
+	DIE(!arena, "Arena malloc failed !");
 	arena->arena_size = size;
+	// Alocam lista de blockuri.
 	arena->alloc_list = dll_create(sizeof(block_t));
 	return arena;
 }
@@ -128,79 +130,79 @@ void free_block(arena_t *arena, const uint64_t address)
 {
 	// Cautam blockul din care trebuie sters
 	// miniblockul cu adresa data de utilizator.
-	dll_node_t *current_block = arena->alloc_list->head;
-	int index_block = 0;
-	while (current_block) {
-		block_t *block_info = ((block_t *)current_block->data);
+	dll_node_t *curr_block = arena->alloc_list->head;
+	int idx_block = 0;
+	for (; curr_block; curr_block = curr_block->next, idx_block++) {
+		block_t *block_info = ((block_t *)curr_block->data);
 
 		// Daca nu am gasit blockul care sa contina miniblockul
 		// dat de utilizator, continui cautarea.
 		if (!(address >= block_info->start_address &&
-		      address < block_info->start_address + block_info->size)) {
-		    index_block++;
-			current_block = current_block->next;
+		      address < block_info->start_address + block_info->size))
 			continue;
-		}
 
 		// Parcurg miniblockurile pana la cel ce trebuie sters.
-		dll_node_t *current_miniblock = block_info->miniblock_list->head;
-		int index_miniblock = 0;
-		while (current_miniblock) {
-			miniblock_t *miniblock_info =
-				((miniblock_t *)current_miniblock->data);
+		dll_node_t *curr_miniblock = block_info->miniblock_list->head;
+		int idx_miniblock = 0;
+		for (; curr_miniblock; curr_miniblock = curr_miniblock->next) {
+			miniblock_t *miniblock_info = ((miniblock_t *)curr_miniblock->data);
 
 			// Daca nu am gasit inca miniblockul, continui cautarea.
 			if (miniblock_info->start_address != address) {
-				current_miniblock =
-					current_miniblock->next;
-				index_miniblock++;
+				idx_miniblock++;
 				continue;
 			}
 
 			// Miniblockul se afla fie la inceputul, fie la finalul
 			// listei de miniblockuri din blockul curent.
-			if (!current_miniblock->prev || !current_miniblock->next) {
+			if (!curr_miniblock->prev || !curr_miniblock->next) {
 				dll_node_t *removed =
 					dll_remove_nth_node(block_info->miniblock_list,
-										index_miniblock);
+										idx_miniblock);
 				miniblock_t *removed_info = ((miniblock_t *)removed->data);
+				// Daca miniblockul este la inceput, schimbam adresa blockului.
 				if (!removed->prev && removed->next)
 					block_info->start_address =
 					    ((miniblock_t *)removed->next->data)->start_address;
 				block_info->size -= removed_info->size;
 				free(removed_info->rw_buffer);
 				free_node(removed);
+
+				// Daca blockul a ramas gol, il stergem din lista de blockuri.
 				if (!block_info->miniblock_list->size) {
 					dll_free(&block_info->miniblock_list);
-					removed = dll_remove_nth_node(arena->alloc_list,
-												  index_block);
+					removed = dll_remove_nth_node(arena->alloc_list, idx_block);
 					free_node(removed);
 				}
 			} else {
-				current_miniblock->prev->next = NULL;
-				block_info->miniblock_list->size = index_miniblock;
+				// Miniblockul se afla la mijlocul liste de miniblockuri.
+				// Calculam noile date ale blockului pe care il vom adauga.
 				size_t remaining_size = miniblock_info->size;
 				int remaining_miniblocks = 1;
-				dll_node_t *aux = current_miniblock->next;
-				while (aux) {
+				dll_node_t *aux = curr_miniblock->next;
+				for (; aux; aux = aux->next) {
 					remaining_size += ((miniblock_t *)aux->data)->size;
 					remaining_miniblocks++;
-					aux = aux->next;
 				}
+
+				// Actualizam datele pentru blockul vechi si cream
+				// noul block in care introducem datale calculate anterior.
+				curr_miniblock->prev->next = NULL;
+				block_info->miniblock_list->size = idx_miniblock;
 				block_info->size -= remaining_size;
-				current_miniblock->prev = NULL;
+				curr_miniblock->prev = NULL;
 				block_t new_block = create_block_t
 				    (miniblock_info->start_address, remaining_size);
-				new_block.miniblock_list->head = current_miniblock;
+				new_block.miniblock_list->head = curr_miniblock;
 				new_block.miniblock_list->size = remaining_miniblocks;
+
+				// Adaugam blockul in lista de blockuri si eliberam miniblockul.
 				dll_add_nth_node(arena->alloc_list,
-								 index_block + 1, &new_block);
+								 idx_block + 1, &new_block);
 				free_block(arena, miniblock_info->start_address);
 			}
 			return;
 		}
-		index_block++;
-		current_block = current_block->next;
 	}
 	// Nu am gasit adresa blockului alocata.
 	printf("Invalid address for free.\n");
