@@ -1,5 +1,5 @@
-#ifndef __DOUBLYLINKEDLIST__
-#define __DOUBLYLINKEDLIST__
+#ifndef __DOUBLYLINKEDLIST_H__
+#define __DOUBLYLINKEDLIST_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,4 +40,4 @@ dll_node_t *dll_remove_nth_node(doubly_linked_list_t *list, unsigned int n);
 void free_node(dll_node_t *node);
 void dll_free(doubly_linked_list_t **pp_list);
 
-#endif // __DOUBLYLINKEDLIST__
+#endif // __DOUBLYLINKEDLIST_H__

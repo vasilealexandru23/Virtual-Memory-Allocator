@@ -34,6 +34,7 @@ int main(void)
 			scanf("%lu%lu", &address, &size);
 			int8_t *data = malloc(size);
 
+			// Citesc spatiul din input.
 			getchar();
 
 			char *full_data = calloc(size + error, sizeof(char));

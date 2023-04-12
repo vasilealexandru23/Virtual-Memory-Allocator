@@ -14,7 +14,7 @@ de memorie precum malloc() sau calloc(). Acestea marchează ca fiind folosite an
 * Descrierea implementarii comenzilor: 
 	* **ALLOC_ARENA** : Alocam dinamic memoria folosita pentru structura de arena
 	si pentru lista dubla inlantuita in care vom pastra nodurile, care vor contine
-	structura de block_t.
+	structuri de tip block_t.
 
 	* **DEALLOC_ARENA** : Eliberam absolut toate resursele folosite de la inceputul
 	programului. Parcurgem fiecare lista in parte si eliberam, pe rand, fiecare
